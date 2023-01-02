@@ -1,0 +1,74 @@
+1. Save all frames from the 1 us AA trajectory.  (*you may also save only a few frames instead of all frames)
+
+	=> Pick frames at every 1000 ps
+	gmx trjconv -f md_0_1_noPBC.xtc -dt 1000 -o trajectory_reduced_frames.xtc 
+
+	=> Pick fevery 1000th frame
+	gmx trjconv -f md_0_1_noPBC.xtc -skip 1000 -o trajectory_reduced_frames.xtc
+
+	=>Do above and then save the frames |or| just save the frames   
+
+	  gmx trjconv -s md_0_1.tpr -f trajectory_reduced_frames.xtc  -nzero 4 -sep -o frames/.gro
+
+
+	(or)  
+
+	gmx trjconv -f md_0_1_noPBC.xtc -s md_0_1.tpr -dt 1 -sep -nzero 4 -o frames/.gro 
+
+
+	gmx trjconv -s md_0_1.tpr -f md_0_1_noPBC.xtc -nzero 4 -sep -o frames/.gro
+
+
+
+2. Convert gro to pdb (optional)
+
+	gmx editconf -f frame.gro -o frame.pdb
+
+
+3. Convert AA -> CG representation (use centre of mass)
+
+	use: AA_to_CG_mapping_centre_of_mass.ipynb
+
+
+
+4. Join the above converted separate frames to form one .xtc files:
+
+	for file in frames_CG/* ; do gmx trjconv -f $file -o ${file%.*}.xtc  ; done 
+
+
+	mv frames_CG/*.xtc ../xtc
+
+	<put it in a script and do chmod+x script and bash script>
+	#!/bin/usr/env bash 
+	filelist=""; 
+	space="";
+	for file in xtc/* ; do filelist+=" ${file}"; done;
+	echo $filelist;
+	gmx trjcat -f $filelist -o combined.xtc;
+	
+
+5. Make index.ndx files for the bonded parameters i.e. bond distance, bond angle, bond dihedrals
+
+	gmx make_ndx -f frames_CG/0000.gro -o index_distance.ndx
+
+	gmx make_ndx -f frames_CG/0000.gro -o index_angle.ndx
+
+	gmx make_ndx -f frames_CG/0000.gro -o index_dihedral.ndx
+
+
+6. Calculate the bonded parameters distribution
+	gmx distance -f combined.xtc -n index_distance.ndx  -oav dist.xvg 
+
+	gmx angle -type dihedral -f combined.xtc -n index_dihedral.ndx  -ov dihedral.xvg 
+
+	gmx angle -f combined.xtc -n index_angle.ndx  -ov angle.xvg 
+
+
+
+7. Plot for indiviudal molecules:
+
+
+
+
+
+8. Superimpose the plots to get an averaged out equilibrium value for the bonded parameters: 

@@ -1,0 +1,6 @@
+#!/bin/usr/env bash 
+filelist=""; 
+space="";
+for file in xtc/* ; do filelist+=" ${file}"; done;
+echo $filelist;
+gmx trjcat -f $filelist -o combined.xtc;
